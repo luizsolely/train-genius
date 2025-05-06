@@ -19,10 +19,10 @@ public class UserService {
         this.adminService = adminService;
     }
 
-    public User createUser(UserRequest userRequest, Long adminId) {
-        Admin admin = adminService.getAdminById(adminId);
-        User newUser = new User();
+    public User createUser(UserRequest userRequest) {
+        Admin admin = adminService.getAdminById(userRequest.adminId());
 
+        User newUser = new User();
         newUser.setName(userRequest.name());
         newUser.setAdmin(admin);
         newUser.setWeight(userRequest.weight());
@@ -32,8 +32,7 @@ public class UserService {
         newUser.setAvailableDays(userRequest.availableDays());
         newUser.setGoal(userRequest.goal());
 
-        userRepository.save(newUser);
-        return newUser;
+        return userRepository.save(newUser);
     }
 
     public List<User> getAllUsers() {
@@ -45,7 +44,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("O ID informado não está relacionado a nenhum Aluno."));
     }
 
-    public User updateUser(Long userId, UserRequest userRequest) {
+    public User updateUserById(Long userId, UserRequest userRequest) {
         User updatedUser = getUserById(userId);
 
         updatedUser.setName(userRequest.name());
@@ -56,16 +55,14 @@ public class UserService {
         updatedUser.setAvailableDays(userRequest.availableDays());
         updatedUser.setGoal(userRequest.goal());
 
-        userRepository.save(updatedUser);
-        return updatedUser;
-
+        return userRepository.save(updatedUser);
     }
 
     public List<User> getUsersByAdminId(Long adminId) {
         return userRepository.findByAdminId(adminId);
     }
 
-    public void deleteUser(Long userId) {
+    public void deleteUserById(Long userId) {
         User deletedUser = getUserById(userId);
         userRepository.delete(deletedUser);
     }

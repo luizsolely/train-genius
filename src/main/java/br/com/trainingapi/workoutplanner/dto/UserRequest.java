@@ -12,5 +12,6 @@ public record UserRequest(
         @NotNull TrainingLevel trainingLevel,
         @NotNull List<String> restrictions,
         @NotNull List<AvailableDays> availableDays,
-        @NotNull Goal goal
+        @NotNull Goal goal,
+        @NotNull Long adminId
 ) {}

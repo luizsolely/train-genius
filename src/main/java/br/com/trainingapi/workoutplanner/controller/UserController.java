@@ -21,8 +21,8 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@Valid @RequestBody UserRequest userRequest, @RequestParam Long adminId) {
-        User user = userService.createUser(userRequest, adminId);
+    public ResponseEntity<User> createUser(@Valid @RequestBody UserRequest userRequest) {
+        User user = userService.createUser(userRequest);
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
@@ -40,13 +40,13 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody UserRequest userRequest) {
-        User user = userService.updateUser(id, userRequest);
+        User user = userService.updateUserById(id, userRequest);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+        userService.deleteUserById(id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 

@@ -30,8 +30,8 @@ public class AdminController {
         return new ResponseEntity<>(admin, HttpStatus.OK);
     }
 
-    @GetMapping("/email/{email}")
-    public ResponseEntity<Admin> getAdminByEmail(@PathVariable String email) {
+    @GetMapping("/by-email")
+    public ResponseEntity<Admin> getAdminByEmail(@RequestParam String email) {
         Admin admin = adminService.getAdminByEmail(email);
         return new ResponseEntity<>(admin, HttpStatus.OK);
     }

@@ -44,12 +44,13 @@ public class WorkoutService {
     }
 
     public Workout updateWorkoutById(WorkoutRequest workoutRequest, Long id) {
-        Workout workout = getWorkoutById(id);
+        Workout workout = getWorkoutById(workoutRequest.userId());
 
         workout.setTitle(workoutRequest.title());
         workout.setDescription(workoutRequest.description());
         workout.setTrainingDate(workoutRequest.trainingDate());
         workout.setExercises(workoutRequest.exercises());
+        workout.setUser(userService.getUserById(id));
 
         return workoutRepository.save(workout);
 
