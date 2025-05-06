@@ -1,4 +1,4 @@
-package br.com.trainingapi.workoutplanner.model;
+package br.com.trainingapi.workoutplanner.model.enums;
 
 public enum AvailableDays {
     MONDAY("Monday"),

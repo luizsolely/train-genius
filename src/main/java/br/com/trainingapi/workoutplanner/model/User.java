@@ -1,5 +1,8 @@
 package br.com.trainingapi.workoutplanner.model;
 
+import br.com.trainingapi.workoutplanner.model.enums.AvailableDays;
+import br.com.trainingapi.workoutplanner.model.enums.Goal;
+import br.com.trainingapi.workoutplanner.model.enums.TrainingLevel;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
