@@ -3,6 +3,7 @@ package br.com.trainingapi.workoutplanner.controller;
 import br.com.trainingapi.workoutplanner.dto.UserRequest;
 import br.com.trainingapi.workoutplanner.model.User;
 import br.com.trainingapi.workoutplanner.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody UserRequest userRequest, @RequestParam Long adminId) {
+    public ResponseEntity<User> createUser(@Valid @RequestBody UserRequest userRequest, @RequestParam Long adminId) {
         User user = userService.createUser(userRequest, adminId);
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
@@ -38,7 +39,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest) {
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody UserRequest userRequest) {
         User user = userService.updateUser(id, userRequest);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }

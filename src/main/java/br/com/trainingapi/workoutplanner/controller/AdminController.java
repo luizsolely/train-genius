@@ -3,6 +3,7 @@ package br.com.trainingapi.workoutplanner.controller;
 import br.com.trainingapi.workoutplanner.dto.AdminRequest;
 import br.com.trainingapi.workoutplanner.model.Admin;
 import br.com.trainingapi.workoutplanner.service.AdminService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class AdminController {
     }
 
     @PostMapping
-    public ResponseEntity<Admin> createAdmin(@RequestBody AdminRequest adminRequest) {
+    public ResponseEntity<Admin> createAdmin(@Valid @RequestBody AdminRequest adminRequest) {
         Admin newAdmin = adminService.createAdmin(adminRequest);
         return new ResponseEntity<>(newAdmin, HttpStatus.CREATED);
     }
