@@ -41,7 +41,7 @@ public class UserService {
 
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("O ID informado não está relacionado a nenhum Aluno."));
+                .orElseThrow(() -> new RuntimeException("O ID informado nao esta relacionado a nenhum Aluno."));
     }
 
     public User updateUserById(Long userId, UserRequest userRequest) {
