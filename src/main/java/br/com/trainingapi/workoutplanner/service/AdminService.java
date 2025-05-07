@@ -1,6 +1,8 @@
 package br.com.trainingapi.workoutplanner.service;
 
 import br.com.trainingapi.workoutplanner.dto.AdminRequest;
+import br.com.trainingapi.workoutplanner.exception.EmailAlreadyInUseException;
+import br.com.trainingapi.workoutplanner.exception.ResourceNotFoundException;
 import br.com.trainingapi.workoutplanner.model.Admin;
 import br.com.trainingapi.workoutplanner.model.User;
 import br.com.trainingapi.workoutplanner.repository.AdminRepository;
@@ -19,8 +21,9 @@ public class AdminService {
 
     public Admin createAdmin(AdminRequest adminRequest) {
         if(adminRepository.findAdminByEmail(adminRequest.email()).isPresent()) {
-            throw new IllegalArgumentException("E-mail informado em uso.");
+            throw new EmailAlreadyInUseException("E-mail already in use: " + adminRequest.email());
         }
+
         Admin newAdmin = new Admin();
 
         newAdmin.setName(adminRequest.name());
@@ -33,7 +36,7 @@ public class AdminService {
 
     public Admin getAdminById(Long id) {
         return adminRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("O ID informado não está relacionado a nenhum Admin."));
+                .orElseThrow(() -> new ResourceNotFoundException("The ID does not belong to any admin."));
     }
 
     public List<User> getUsersByAdmin(Long adminId) {
@@ -42,7 +45,7 @@ public class AdminService {
 
     public Admin getAdminByEmail(String adminEmail) {
         return adminRepository.findAdminByEmail(adminEmail)
-                .orElseThrow(() -> new RuntimeException("O E-mail informado não está relacionado a nenhum Admin."));
+                .orElseThrow(() -> new RuntimeException("The e-mail does not belong to any admin"));
     }
 
 }

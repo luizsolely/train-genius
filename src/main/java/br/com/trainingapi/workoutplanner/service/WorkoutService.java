@@ -1,6 +1,7 @@
 package br.com.trainingapi.workoutplanner.service;
 
 import br.com.trainingapi.workoutplanner.dto.WorkoutRequest;
+import br.com.trainingapi.workoutplanner.exception.ResourceNotFoundException;
 import br.com.trainingapi.workoutplanner.model.User;
 import br.com.trainingapi.workoutplanner.model.Workout;
 import br.com.trainingapi.workoutplanner.repository.WorkoutRepository;
@@ -40,7 +41,7 @@ public class WorkoutService {
 
     public Workout getWorkoutById(Long id) {
         return workoutRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("O ID informado nao esta relacionado a nenhum Treino."));
+                .orElseThrow(() -> new ResourceNotFoundException("The ID does not belong to any workout."));
     }
 
     public Workout updateWorkoutById(WorkoutRequest workoutRequest, Long id) {

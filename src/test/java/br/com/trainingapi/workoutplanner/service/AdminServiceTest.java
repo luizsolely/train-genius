@@ -1,6 +1,7 @@
 package br.com.trainingapi.workoutplanner.service;
 
 import br.com.trainingapi.workoutplanner.dto.AdminRequest;
+import br.com.trainingapi.workoutplanner.exception.ResourceNotFoundException;
 import br.com.trainingapi.workoutplanner.model.Admin;
 import br.com.trainingapi.workoutplanner.repository.AdminRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,10 +57,10 @@ class AdminServiceTest {
     void getAdminById_shouldThrowExceptionIfNotFound() {
         when(adminRepository.findById(1L)).thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
             adminService.getAdminById(1L);
         });
 
-        assertEquals("O ID informado não está relacionado a nenhum Admin.", exception.getMessage());
+        assertEquals("The ID does not belong to any admin.", exception.getMessage());
     }
 }

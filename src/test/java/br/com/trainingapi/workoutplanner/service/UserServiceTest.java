@@ -1,6 +1,7 @@
 package br.com.trainingapi.workoutplanner.service;
 
 import br.com.trainingapi.workoutplanner.dto.UserRequest;
+import br.com.trainingapi.workoutplanner.exception.ResourceNotFoundException;
 import br.com.trainingapi.workoutplanner.model.Admin;
 import br.com.trainingapi.workoutplanner.model.User;
 import br.com.trainingapi.workoutplanner.model.enums.AvailableDays;
@@ -74,13 +75,13 @@ class UserServiceTest {
     }
 
     @Test
-    void getUserById_shouldThrowExceptionIfNotFound() {
+    void getUserById_shouldThrowResourceNotFoundExceptionIfNotFound() {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
             userService.getUserById(1L);
         });
 
-        assertEquals("O ID informado nao esta relacionado a nenhum Aluno.", exception.getMessage());
+        assertEquals("The ID does not belong to any user.", exception.getMessage());
     }
 }
