@@ -21,5 +21,7 @@ public record WorkoutRequest(
         List<String> exercises,
 
         @NotNull
-        Long userId)
+        Long userId
+
+)
 {}

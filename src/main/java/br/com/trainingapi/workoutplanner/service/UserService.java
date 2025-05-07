@@ -1,8 +1,9 @@
 package br.com.trainingapi.workoutplanner.service;
 
 import br.com.trainingapi.workoutplanner.dto.UserRequest;
+import br.com.trainingapi.workoutplanner.dto.UserResponse;
 import br.com.trainingapi.workoutplanner.exception.ResourceNotFoundException;
-import br.com.trainingapi.workoutplanner.model.Admin;
+import br.com.trainingapi.workoutplanner.mapper.UserMapper;
 import br.com.trainingapi.workoutplanner.model.User;
 import br.com.trainingapi.workoutplanner.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -13,59 +14,53 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final AdminService adminService;
+    private final UserMapper userMapper;
 
-    public UserService(UserRepository userRepository, AdminService adminService) {
+    public UserService(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
-        this.adminService = adminService;
+        this.userMapper = userMapper;
     }
 
-    public User createUser(UserRequest userRequest) {
-        Admin admin = adminService.getAdminById(userRequest.adminId());
-
-        User newUser = new User();
-        newUser.setName(userRequest.name());
-        newUser.setAdmin(admin);
-        newUser.setWeight(userRequest.weight());
-        newUser.setHeight(userRequest.height());
-        newUser.setTrainingLevel(userRequest.trainingLevel());
-        newUser.setRestrictions(userRequest.restrictions());
-        newUser.setAvailableDays(userRequest.availableDays());
-        newUser.setGoal(userRequest.goal());
-
-        return userRepository.save(newUser);
+    public UserResponse createUser(UserRequest userRequest) {
+        User user = userMapper.toEntity(userRequest);
+        return userMapper.toResponse(userRepository.save(user));
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserResponse> getAllUsers() {
+        return userMapper.toResponseList(userRepository.findAll());
     }
 
-    public User getUserById(Long userId) {
-        return userRepository.findById(userId)
+    public UserResponse getUserById(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("The ID does not belong to any user."));
+        return userMapper.toResponse(user);
     }
 
-    public User updateUserById(Long userId, UserRequest userRequest) {
-        User updatedUser = getUserById(userId);
+    public UserResponse updateUserById(Long userId, UserRequest userRequest) {
+        User user = getUserEntityById(userId);
 
-        updatedUser.setName(userRequest.name());
-        updatedUser.setWeight(userRequest.weight());
-        updatedUser.setHeight(userRequest.height());
-        updatedUser.setTrainingLevel(userRequest.trainingLevel());
-        updatedUser.setRestrictions(userRequest.restrictions());
-        updatedUser.setAvailableDays(userRequest.availableDays());
-        updatedUser.setGoal(userRequest.goal());
+        user.setName(userRequest.name());
+        user.setWeight(userRequest.weight());
+        user.setHeight(userRequest.height());
+        user.setTrainingLevel(userRequest.trainingLevel());
+        user.setRestrictions(userRequest.restrictions());
+        user.setAvailableDays(userRequest.availableDays());
+        user.setGoal(userRequest.goal());
 
-        return userRepository.save(updatedUser);
+        return userMapper.toResponse(userRepository.save(user));
     }
 
-    public List<User> getUsersByAdminId(Long adminId) {
-        return userRepository.findByAdminId(adminId);
+    public List<UserResponse> getUsersByAdminId(Long adminId) {
+        return userMapper.toResponseList(userRepository.findByAdminId(adminId));
     }
 
     public void deleteUserById(Long userId) {
-        User deletedUser = getUserById(userId);
-        userRepository.delete(deletedUser);
+        User user = getUserEntityById(userId);
+        userRepository.delete(user);
     }
 
+    public User getUserEntityById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("The ID does not belong to any user."));
+    }
 }

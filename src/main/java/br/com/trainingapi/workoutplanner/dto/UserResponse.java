@@ -5,6 +5,7 @@ import br.com.trainingapi.workoutplanner.model.enums.*;
 import java.util.List;
 
 public record UserResponse(
+
         Long id,
         String name,
         Double weight,
@@ -14,4 +15,7 @@ public record UserResponse(
         List<AvailableDays> availableDays,
         Goal goal,
         String workoutMessage
-) {}
+
+)
+
+{}

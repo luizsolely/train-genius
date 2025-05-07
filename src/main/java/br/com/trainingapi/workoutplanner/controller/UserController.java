@@ -1,6 +1,7 @@
 package br.com.trainingapi.workoutplanner.controller;
 
 import br.com.trainingapi.workoutplanner.dto.UserRequest;
+import br.com.trainingapi.workoutplanner.dto.UserResponse;
 import br.com.trainingapi.workoutplanner.model.User;
 import br.com.trainingapi.workoutplanner.service.UserService;
 import jakarta.validation.Valid;
@@ -21,26 +22,26 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@Valid @RequestBody UserRequest userRequest) {
-        User user = userService.createUser(userRequest);
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest userRequest) {
+        UserResponse user = userService.createUser(userRequest);
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        User user = userService.getUserById(id);
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+        UserResponse user = userService.getUserById(id);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
     @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<User>> getUsersByAdminId(@PathVariable Long adminId) {
-        List<User> usersList = userService.getUsersByAdminId(adminId);
+    public ResponseEntity<List<UserResponse>> getUsersByAdminId(@PathVariable Long adminId) {
+        List<UserResponse> usersList = userService.getUsersByAdminId(adminId);
         return new ResponseEntity<>(usersList, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody UserRequest userRequest) {
-        User user = userService.updateUserById(id, userRequest);
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UserRequest userRequest) {
+        UserResponse user = userService.updateUserById(id, userRequest);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 

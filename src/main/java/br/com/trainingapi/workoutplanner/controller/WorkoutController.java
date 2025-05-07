@@ -1,8 +1,7 @@
 package br.com.trainingapi.workoutplanner.controller;
 
 import br.com.trainingapi.workoutplanner.dto.WorkoutRequest;
-import br.com.trainingapi.workoutplanner.model.Workout;
-import br.com.trainingapi.workoutplanner.service.UserService;
+import br.com.trainingapi.workoutplanner.dto.WorkoutResponse;
 import br.com.trainingapi.workoutplanner.service.WorkoutService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,26 +21,26 @@ public class WorkoutController {
     }
 
     @PostMapping
-    public ResponseEntity<Workout> createWorkout(@Valid @RequestBody WorkoutRequest workoutRequest) {
-        Workout workout = workoutService.createWorkout(workoutRequest);
+    public ResponseEntity<WorkoutResponse> createWorkout(@Valid @RequestBody WorkoutRequest workoutRequest) {
+        WorkoutResponse workout = workoutService.createWorkout(workoutRequest);
         return new ResponseEntity<>(workout, HttpStatus.CREATED);
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Workout>> getWorkoutsByUserId(@PathVariable Long userId) {
-        List<Workout> workouts = workoutService.getWorkoutsByUserId(userId);
+    public ResponseEntity<List<WorkoutResponse>> getWorkoutsByUserId(@PathVariable Long userId) {
+        List<WorkoutResponse> workouts = workoutService.getWorkoutsByUserId(userId);
         return new ResponseEntity<>(workouts, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Workout> getWorkoutById(@PathVariable Long id) {
-        Workout workout = workoutService.getWorkoutById(id);
+    public ResponseEntity<WorkoutResponse> getWorkoutById(@PathVariable Long id) {
+        WorkoutResponse workout = workoutService.getWorkoutById(id);
         return new ResponseEntity<>(workout, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Workout> updateWorkoutById(@Valid @RequestBody WorkoutRequest workoutRequest, @PathVariable Long id) {
-        Workout updatedWorkout = workoutService.updateWorkoutById(workoutRequest, id);
+    public ResponseEntity<WorkoutResponse> updateWorkoutById(@Valid @RequestBody WorkoutRequest workoutRequest, @PathVariable Long id) {
+        WorkoutResponse updatedWorkout = workoutService.updateWorkoutById(workoutRequest, id);
         return new ResponseEntity<>(updatedWorkout, HttpStatus.OK);
     }
 
