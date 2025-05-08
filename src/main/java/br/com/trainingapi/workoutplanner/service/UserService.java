@@ -3,8 +3,11 @@ package br.com.trainingapi.workoutplanner.service;
 import br.com.trainingapi.workoutplanner.dto.UserRequest;
 import br.com.trainingapi.workoutplanner.dto.UserResponse;
 import br.com.trainingapi.workoutplanner.exception.ResourceNotFoundException;
+import br.com.trainingapi.workoutplanner.mapper.AdminMapper;
 import br.com.trainingapi.workoutplanner.mapper.UserMapper;
+import br.com.trainingapi.workoutplanner.model.Admin;
 import br.com.trainingapi.workoutplanner.model.User;
+import br.com.trainingapi.workoutplanner.repository.AdminRepository;
 import br.com.trainingapi.workoutplanner.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -13,16 +16,23 @@ import java.util.List;
 @Service
 public class UserService {
 
+    private final AdminRepository adminRepository;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper) {
+    public UserService(AdminRepository adminRepository, UserRepository userRepository, UserMapper userMapper) {
+        this.adminRepository = adminRepository;
         this.userRepository = userRepository;
         this.userMapper = userMapper;
     }
 
     public UserResponse createUser(UserRequest userRequest) {
+        Admin admin = adminRepository.findById(userRequest.adminId())
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found with ID: " + userRequest.adminId()));
+
         User user = userMapper.toEntity(userRequest);
+        user.setAdmin(admin);
+
         return userMapper.toResponse(userRepository.save(user));
     }
 

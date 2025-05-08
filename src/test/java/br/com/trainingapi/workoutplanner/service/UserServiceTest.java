@@ -5,9 +5,11 @@ import br.com.trainingapi.workoutplanner.dto.UserResponse;
 import br.com.trainingapi.workoutplanner.exception.ResourceNotFoundException;
 import br.com.trainingapi.workoutplanner.mapper.UserMapper;
 import br.com.trainingapi.workoutplanner.model.User;
+import br.com.trainingapi.workoutplanner.model.Admin;
 import br.com.trainingapi.workoutplanner.model.enums.AvailableDays;
 import br.com.trainingapi.workoutplanner.model.enums.Goal;
 import br.com.trainingapi.workoutplanner.model.enums.TrainingLevel;
+import br.com.trainingapi.workoutplanner.repository.AdminRepository;
 import br.com.trainingapi.workoutplanner.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,9 @@ import static org.mockito.Mockito.*;
 class UserServiceTest {
 
     @Mock
+    private AdminRepository adminRepository;
+
+    @Mock
     private UserRepository userRepository;
 
     @Mock
@@ -30,6 +35,7 @@ class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
+    private Admin admin;
     private UserRequest userRequest;
     private User user;
     private UserResponse userResponse;
@@ -57,6 +63,11 @@ class UserServiceTest {
         user.setAvailableDays(List.of(AvailableDays.MONDAY, AvailableDays.WEDNESDAY));
         user.setGoal(Goal.HYPERTROPHY);
 
+        admin = new Admin();
+        admin.setId(1L);
+        admin.setName("Admin Name");
+        admin.setEmail("admin@example.com");
+
         userResponse = new UserResponse(
                 1L, "User Name", 70.0, 1.75,
                 TrainingLevel.BEGINNER,
@@ -69,16 +80,23 @@ class UserServiceTest {
 
     @Test
     void createUser_shouldReturnUserResponse() {
+        // Arrange
+        Long adminId = 1L;
+        when(adminRepository.findById(adminId)).thenReturn(Optional.of(admin));
         when(userMapper.toEntity(userRequest)).thenReturn(user);
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toResponse(user)).thenReturn(userResponse);
 
+        // Act
         UserResponse result = userService.createUser(userRequest);
 
+        // Assert
         assertNotNull(result);
         assertEquals("User Name", result.name());
+        verify(adminRepository).findById(adminId);
         verify(userRepository).save(user);
     }
+
 
     @Test
     void getAllUsers_shouldReturnListOfUserResponse() {

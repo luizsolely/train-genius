@@ -128,7 +128,7 @@ class AdminServiceTest {
         when(adminRepository.findById(1L)).thenReturn(Optional.of(admin));
         when(userMapper.toResponseList(admin.getUsers())).thenReturn(List.of(userResponse));
 
-        List<UserResponse> result = adminService.getUsersByAdmin(1L, userMapper);
+        List<UserResponse> result = adminService.getUsersByAdmin(1L);
 
         assertEquals(1, result.size());
         assertEquals("User Test", result.get(0).name());

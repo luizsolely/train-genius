@@ -41,7 +41,7 @@ public class AdminService {
         return adminMapper.toResponse(admin);
     }
 
-    public List<UserResponse> getUsersByAdmin(Long adminId, UserMapper userMapper) {
+    public List<UserResponse> getUsersByAdmin(Long adminId) {
         Admin admin = adminRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("The ID does not belong to any admin."));
         return userMapper.toResponseList(admin.getUsers());
