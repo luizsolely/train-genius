@@ -11,6 +11,8 @@ import br.com.trainingapi.workoutplanner.model.enums.Goal;
 import br.com.trainingapi.workoutplanner.model.enums.TrainingLevel;
 import br.com.trainingapi.workoutplanner.repository.AdminRepository;
 import br.com.trainingapi.workoutplanner.repository.UserRepository;
+import br.com.trainingapi.workoutplanner.security.jwt.JwtService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -23,14 +25,11 @@ import static org.mockito.Mockito.*;
 
 class UserServiceTest {
 
-    @Mock
-    private AdminRepository adminRepository;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private UserMapper userMapper;
+    @Mock private AdminRepository adminRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private UserMapper userMapper;
+    @Mock private JwtService jwtService;
+    @Mock private HttpServletRequest request;
 
     @InjectMocks
     private UserService userService;
@@ -40,9 +39,16 @@ class UserServiceTest {
     private User user;
     private UserResponse userResponse;
 
+    private final String fakeToken = "Bearer mock.jwt.token";
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+
+        admin = new Admin();
+        admin.setId(1L);
+        admin.setName("Admin Name");
+        admin.setEmail("admin@example.com");
 
         userRequest = new UserRequest(
                 "User Name", 70.0, 1.75,
@@ -50,7 +56,7 @@ class UserServiceTest {
                 List.of("Knee pain"),
                 List.of(AvailableDays.MONDAY, AvailableDays.WEDNESDAY),
                 Goal.HYPERTROPHY,
-                1L
+                admin.getId()
         );
 
         user = new User();
@@ -62,11 +68,7 @@ class UserServiceTest {
         user.setRestrictions(List.of("Knee pain"));
         user.setAvailableDays(List.of(AvailableDays.MONDAY, AvailableDays.WEDNESDAY));
         user.setGoal(Goal.HYPERTROPHY);
-
-        admin = new Admin();
-        admin.setId(1L);
-        admin.setName("Admin Name");
-        admin.setEmail("admin@example.com");
+        user.setAdmin(admin);
 
         userResponse = new UserResponse(
                 1L, "User Name", 70.0, 1.75,
@@ -76,37 +78,35 @@ class UserServiceTest {
                 Goal.HYPERTROPHY,
                 null
         );
+
+        when(request.getHeader("Authorization")).thenReturn(fakeToken);
+        when(jwtService.extractAdminId("mock.jwt.token")).thenReturn(admin.getId());
     }
 
     @Test
     void createUser_shouldReturnUserResponse() {
-        // Arrange
-        Long adminId = 1L;
-        when(adminRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(adminRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
         when(userMapper.toEntity(userRequest)).thenReturn(user);
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toResponse(user)).thenReturn(userResponse);
 
-        // Act
         UserResponse result = userService.createUser(userRequest);
 
-        // Assert
         assertNotNull(result);
         assertEquals("User Name", result.name());
-        verify(adminRepository).findById(adminId);
+        verify(adminRepository).findById(admin.getId());
         verify(userRepository).save(user);
     }
 
-
     @Test
     void getAllUsers_shouldReturnListOfUserResponse() {
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findByAdminId(admin.getId())).thenReturn(List.of(user));
         when(userMapper.toResponseList(List.of(user))).thenReturn(List.of(userResponse));
 
         List<UserResponse> result = userService.getAllUsers();
 
         assertEquals(1, result.size());
-        verify(userRepository).findAll();
+        verify(userRepository).findByAdminId(admin.getId());
     }
 
     @Test
@@ -137,17 +137,6 @@ class UserServiceTest {
 
         assertEquals("User Name", result.name());
         verify(userRepository).save(user);
-    }
-
-    @Test
-    void getUsersByAdminId_shouldReturnUserResponseList() {
-        when(userRepository.findByAdminId(1L)).thenReturn(List.of(user));
-        when(userMapper.toResponseList(List.of(user))).thenReturn(List.of(userResponse));
-
-        List<UserResponse> result = userService.getUsersByAdminId(1L);
-
-        assertEquals(1, result.size());
-        verify(userRepository).findByAdminId(1L);
     }
 
     @Test

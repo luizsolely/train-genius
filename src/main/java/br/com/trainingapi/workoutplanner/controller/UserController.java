@@ -33,9 +33,9 @@ public class UserController {
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    @GetMapping("/admin/{adminId}")
-    public ResponseEntity<List<UserResponse>> getUsersByAdminId(@PathVariable Long adminId) {
-        List<UserResponse> usersList = userService.getUsersByAdminId(adminId);
+    @GetMapping("/admin/users")
+    public ResponseEntity<List<UserResponse>> getUsersByAdminId() {
+        List<UserResponse> usersList = userService.getAllUsers();
         return new ResponseEntity<>(usersList, HttpStatus.OK);
     }
 

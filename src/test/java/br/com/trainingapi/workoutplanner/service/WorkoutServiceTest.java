@@ -4,9 +4,12 @@ import br.com.trainingapi.workoutplanner.dto.WorkoutRequest;
 import br.com.trainingapi.workoutplanner.dto.WorkoutResponse;
 import br.com.trainingapi.workoutplanner.exception.ResourceNotFoundException;
 import br.com.trainingapi.workoutplanner.mapper.WorkoutMapper;
+import br.com.trainingapi.workoutplanner.model.Admin;
 import br.com.trainingapi.workoutplanner.model.User;
 import br.com.trainingapi.workoutplanner.model.Workout;
 import br.com.trainingapi.workoutplanner.repository.WorkoutRepository;
+import br.com.trainingapi.workoutplanner.security.jwt.JwtService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -19,14 +22,11 @@ import static org.mockito.Mockito.*;
 
 class WorkoutServiceTest {
 
-    @Mock
-    private WorkoutRepository workoutRepository;
-
-    @Mock
-    private UserService userService;
-
-    @Mock
-    private WorkoutMapper workoutMapper;
+    @Mock private WorkoutRepository workoutRepository;
+    @Mock private UserService userService;
+    @Mock private WorkoutMapper workoutMapper;
+    @Mock private JwtService jwtService;
+    @Mock private HttpServletRequest request;
 
     @InjectMocks
     private WorkoutService workoutService;
@@ -35,10 +35,22 @@ class WorkoutServiceTest {
     private Workout workout;
     private WorkoutResponse workoutResponse;
     private User user;
+    private Admin admin;
+
+    private final String fakeToken = "Bearer mock.jwt.token";
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+
+        admin = new Admin();
+        admin.setId(1L);
+        admin.setEmail("admin@example.com");
+
+        user = new User();
+        user.setId(1L);
+        user.setName("User Name");
+        user.setAdmin(admin);
 
         workoutRequest = new WorkoutRequest(
                 "Upper Body",
@@ -47,10 +59,6 @@ class WorkoutServiceTest {
                 List.of("Bench Press", "Triceps Dips"),
                 1L
         );
-
-        user = new User();
-        user.setId(1L);
-        user.setName("User Name");
 
         workout = new Workout();
         workout.setId(1L);
@@ -67,6 +75,9 @@ class WorkoutServiceTest {
                 "2025-05-10",
                 1L
         );
+
+        when(request.getHeader("Authorization")).thenReturn(fakeToken);
+        when(jwtService.extractAdminId("mock.jwt.token")).thenReturn(1L);
     }
 
     @Test
@@ -85,6 +96,7 @@ class WorkoutServiceTest {
 
     @Test
     void getWorkoutsByUserId_shouldReturnWorkoutList() {
+        when(userService.getUserEntityById(1L)).thenReturn(user);
         when(workoutRepository.findByUserId(1L)).thenReturn(List.of(workout));
         when(workoutMapper.toResponseList(List.of(workout))).thenReturn(List.of(workoutResponse));
 

@@ -1,5 +1,10 @@
 package br.com.trainingapi.workoutplanner.service;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.beans.factory.annotation.Autowired;
+import br.com.trainingapi.workoutplanner.security.jwt.JwtService;
 import br.com.trainingapi.workoutplanner.dto.UserRequest;
 import br.com.trainingapi.workoutplanner.dto.UserResponse;
 import br.com.trainingapi.workoutplanner.exception.ResourceNotFoundException;
@@ -19,11 +24,22 @@ public class UserService {
     private final AdminRepository adminRepository;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final HttpServletRequest request;
+    private final JwtService jwtService;
 
-    public UserService(AdminRepository adminRepository, UserRepository userRepository, UserMapper userMapper) {
+
+    public UserService(
+            AdminRepository adminRepository,
+            UserRepository userRepository,
+            UserMapper userMapper,
+            HttpServletRequest request,
+            JwtService jwtService
+    ) {
         this.adminRepository = adminRepository;
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.request = request;
+        this.jwtService = jwtService;
     }
 
     public UserResponse createUser(UserRequest userRequest) {
@@ -37,17 +53,29 @@ public class UserService {
     }
 
     public List<UserResponse> getAllUsers() {
-        return userMapper.toResponseList(userRepository.findAll());
+        Long adminId = getAuthenticatedAdminId();
+        List<User> users = userRepository.findByAdminId(adminId);
+
+        return userMapper.toResponseList(users);
     }
 
     public UserResponse getUserById(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("The ID does not belong to any user."));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!user.getAdmin().getId().equals(getAuthenticatedAdminId())) {
+            throw new AccessDeniedException("You are not allowed to access this user.");
+        }
+
         return userMapper.toResponse(user);
     }
 
     public UserResponse updateUserById(Long userId, UserRequest userRequest) {
         User user = getUserEntityById(userId);
+
+        if (!user.getAdmin().getId().equals(getAuthenticatedAdminId())) {
+            throw new AccessDeniedException("You are not allowed to access this user.");
+        }
 
         user.setName(userRequest.name());
         user.setWeight(userRequest.weight());
@@ -60,12 +88,13 @@ public class UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
-    public List<UserResponse> getUsersByAdminId(Long adminId) {
-        return userMapper.toResponseList(userRepository.findByAdminId(adminId));
-    }
-
     public void deleteUserById(Long userId) {
         User user = getUserEntityById(userId);
+
+        if (!user.getAdmin().getId().equals(getAuthenticatedAdminId())) {
+            throw new AccessDeniedException("You are not allowed to access this user.");
+        }
+
         userRepository.delete(user);
     }
 
@@ -73,4 +102,11 @@ public class UserService {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("The ID does not belong to any user."));
     }
+
+    private Long getAuthenticatedAdminId() {
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        String token = authHeader.substring(7); // Remove "Bearer "
+        return jwtService.extractAdminId(token);
+    }
+
 }

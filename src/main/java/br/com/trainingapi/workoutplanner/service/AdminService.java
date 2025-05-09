@@ -9,6 +9,7 @@ import br.com.trainingapi.workoutplanner.mapper.AdminMapper;
 import br.com.trainingapi.workoutplanner.mapper.UserMapper;
 import br.com.trainingapi.workoutplanner.model.Admin;
 import br.com.trainingapi.workoutplanner.repository.AdminRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,21 +17,25 @@ import java.util.List;
 @Service
 public class AdminService {
 
+    private final PasswordEncoder passwordEncoder;
     private final AdminRepository adminRepository;
     private final AdminMapper adminMapper;
     private final UserMapper userMapper;
 
-    public AdminService(AdminRepository adminRepository, AdminMapper adminMapper, UserMapper userMapper) {
+    public AdminService(PasswordEncoder passwordEncoder, AdminRepository adminRepository, AdminMapper adminMapper, UserMapper userMapper) {
+        this.passwordEncoder = passwordEncoder;
         this.adminRepository = adminRepository;
         this.adminMapper = adminMapper;
         this.userMapper = userMapper;
     }
 
     public AdminResponse createAdmin(AdminRequest adminRequest) {
-        Admin admin = adminMapper.toEntity(adminRequest);
-        if(adminRepository.findAdminByEmail(admin.getEmail()).isPresent()) {
-            throw new EmailAlreadyInUseException("E-mail already in use: " + admin.getEmail());
+        if(adminRepository.findAdminByEmail(adminRequest.email()).isPresent()) {
+            throw new EmailAlreadyInUseException("E-mail already in use: " + adminRequest.email());
         }
+
+        Admin admin = adminMapper.toEntity(adminRequest);
+        admin.setPassword(passwordEncoder.encode(admin.getPassword()));
 
         return adminMapper.toResponse(adminRepository.save(admin));
     }

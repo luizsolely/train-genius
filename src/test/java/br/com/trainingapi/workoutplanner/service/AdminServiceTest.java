@@ -1,5 +1,6 @@
 package br.com.trainingapi.workoutplanner.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import br.com.trainingapi.workoutplanner.dto.AdminRequest;
 import br.com.trainingapi.workoutplanner.dto.AdminResponse;
 import br.com.trainingapi.workoutplanner.dto.UserResponse;
@@ -23,6 +24,9 @@ import static org.mockito.Mockito.*;
 class AdminServiceTest {
 
     @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
     private AdminRepository adminRepository;
 
     @Mock
@@ -34,6 +38,9 @@ class AdminServiceTest {
     @InjectMocks
     private AdminService adminService;
 
+    private final Long adminId = 1L;
+    private final String adminEmail = "admin@email.com";
+
     private AdminRequest adminRequest;
     private Admin admin;
     private AdminResponse adminResponse;
@@ -42,93 +49,94 @@ class AdminServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        adminRequest = new AdminRequest("Admin Name", "admin@email.com", "password123");
+        adminRequest = new AdminRequest("Admin Name", adminEmail, "password123");
 
         admin = new Admin();
-        admin.setId(1L);
+        admin.setId(adminId);
         admin.setName("Admin Name");
-        admin.setEmail("admin@email.com");
-        admin.setPassword("password123");
+        admin.setEmail(adminEmail);
+        admin.setPassword("encodedPassword123");
 
-        adminResponse = new AdminResponse(1L, "Admin Name", "admin@email.com");
+
+        adminResponse = new AdminResponse(adminId, "Admin Name", adminEmail);
     }
 
     @Test
-    void createAdmin_shouldReturnAdminResponse() {
+    void createAdmin_whenEmailIsNew_shouldReturnAdminResponse() {
         when(adminMapper.toEntity(adminRequest)).thenReturn(admin);
-        when(adminRepository.findAdminByEmail(admin.getEmail())).thenReturn(Optional.empty());
+        when(adminRepository.findAdminByEmail(adminEmail)).thenReturn(Optional.empty());
         when(adminRepository.save(admin)).thenReturn(admin);
         when(adminMapper.toResponse(admin)).thenReturn(adminResponse);
+        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword123");
 
         AdminResponse result = adminService.createAdmin(adminRequest);
 
         assertNotNull(result);
-        assertEquals(adminResponse.email(), result.email());
+        assertEquals(adminEmail, result.email());
         verify(adminRepository).save(admin);
     }
 
     @Test
-    void createAdmin_shouldThrowExceptionWhenEmailExists() {
+    void createAdmin_whenEmailExists_shouldThrowException() {
         when(adminMapper.toEntity(adminRequest)).thenReturn(admin);
-        when(adminRepository.findAdminByEmail(admin.getEmail())).thenReturn(Optional.of(admin));
+        when(adminRepository.findAdminByEmail(adminEmail)).thenReturn(Optional.of(admin));
 
         assertThrows(EmailAlreadyInUseException.class, () -> adminService.createAdmin(adminRequest));
-
         verify(adminRepository, never()).save(any());
     }
 
     @Test
-    void getAdminById_shouldReturnAdminResponse() {
-        when(adminRepository.findById(1L)).thenReturn(Optional.of(admin));
+    void getAdminById_whenExists_shouldReturnAdminResponse() {
+        when(adminRepository.findById(adminId)).thenReturn(Optional.of(admin));
         when(adminMapper.toResponse(admin)).thenReturn(adminResponse);
 
-        AdminResponse result = adminService.getAdminById(1L);
+        AdminResponse result = adminService.getAdminById(adminId);
 
         assertNotNull(result);
-        assertEquals(adminResponse.id(), result.id());
+        assertEquals(adminId, result.id());
     }
 
     @Test
-    void getAdminById_shouldThrowExceptionIfNotFound() {
+    void getAdminById_whenNotFound_shouldThrowException() {
         when(adminRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> adminService.getAdminById(99L));
     }
 
     @Test
-    void getAdminByEmail_shouldReturnAdminResponse() {
-        when(adminRepository.findAdminByEmail("admin@email.com")).thenReturn(Optional.of(admin));
+    void getAdminByEmail_whenExists_shouldReturnAdminResponse() {
+        when(adminRepository.findAdminByEmail(adminEmail)).thenReturn(Optional.of(admin));
         when(adminMapper.toResponse(admin)).thenReturn(adminResponse);
 
-        AdminResponse result = adminService.getAdminByEmail("admin@email.com");
+        AdminResponse result = adminService.getAdminByEmail(adminEmail);
 
         assertNotNull(result);
-        assertEquals("admin@email.com", result.email());
+        assertEquals(adminEmail, result.email());
     }
 
     @Test
-    void getAdminByEmail_shouldThrowExceptionIfNotFound() {
+    void getAdminByEmail_whenNotFound_shouldThrowException() {
         when(adminRepository.findAdminByEmail("notfound@email.com")).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> adminService.getAdminByEmail("notfound@email.com"));
     }
 
     @Test
-    void getUsersByAdmin_shouldReturnUserResponseList() {
+    void getUsersByAdmin_shouldReturnMappedUserList() {
         User user = new User();
-        user.setId(1L);
+        user.setId(10L);
         user.setName("User Test");
 
         admin.setUsers(List.of(user));
 
         UserResponse userResponse = new UserResponse(
-                1L, "User Test", null, null, null, null, null, null, null
+                10L, "User Test", null, null, null, null, null, null, null
         );
 
-        when(adminRepository.findById(1L)).thenReturn(Optional.of(admin));
+        when(adminRepository.findById(adminId)).thenReturn(Optional.of(admin));
         when(userMapper.toResponseList(admin.getUsers())).thenReturn(List.of(userResponse));
 
-        List<UserResponse> result = adminService.getUsersByAdmin(1L);
+        List<UserResponse> result = adminService.getUsersByAdmin(adminId);
 
         assertEquals(1, result.size());
         assertEquals("User Test", result.get(0).name());
