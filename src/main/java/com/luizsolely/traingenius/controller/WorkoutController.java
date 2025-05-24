@@ -3,51 +3,53 @@ package com.luizsolely.traingenius.controller;
 import com.luizsolely.traingenius.dto.WorkoutRequest;
 import com.luizsolely.traingenius.dto.WorkoutResponse;
 import com.luizsolely.traingenius.service.WorkoutService;
-import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/workouts")
+@RequestMapping("/api/users/{userId}/workouts")
+@RequiredArgsConstructor
 public class WorkoutController {
 
     private final WorkoutService workoutService;
 
-    public WorkoutController(WorkoutService workoutService) {
-        this.workoutService = workoutService;
+    @PostMapping("/generate")
+    @ResponseStatus(HttpStatus.CREATED)
+    public WorkoutResponse generateWorkout(@PathVariable Long userId) {
+        return workoutService.generateWorkout(userId);
     }
 
     @PostMapping
-    public ResponseEntity<WorkoutResponse> createWorkout(@Valid @RequestBody WorkoutRequest workoutRequest) {
-        WorkoutResponse workout = workoutService.createWorkout(workoutRequest);
-        return new ResponseEntity<>(workout, HttpStatus.CREATED);
+    @ResponseStatus(HttpStatus.CREATED)
+    public WorkoutResponse createWorkout(
+            @PathVariable Long userId,
+            @RequestBody WorkoutRequest request
+    ) {
+        return workoutService.createWorkout(userId, request);
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<WorkoutResponse>> getWorkoutsByUserId(@PathVariable Long userId) {
-        List<WorkoutResponse> workouts = workoutService.getWorkoutsByUserId(userId);
-        return new ResponseEntity<>(workouts, HttpStatus.OK);
+    @GetMapping
+    public List<WorkoutResponse> getAllWorkouts(@PathVariable Long userId) {
+        return workoutService.getAllWorkoutsByUserId(userId);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<WorkoutResponse> getWorkoutById(@PathVariable Long id) {
-        WorkoutResponse workout = workoutService.getWorkoutById(id);
-        return new ResponseEntity<>(workout, HttpStatus.OK);
+    @GetMapping("/{workoutId}")
+    public WorkoutResponse getWorkoutById(
+            @PathVariable Long userId,
+            @PathVariable Long workoutId
+    ) {
+        return workoutService.getWorkoutById(workoutId);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<WorkoutResponse> updateWorkoutById(@Valid @RequestBody WorkoutRequest workoutRequest, @PathVariable Long id) {
-        WorkoutResponse updatedWorkout = workoutService.updateWorkoutById(workoutRequest, id);
-        return new ResponseEntity<>(updatedWorkout, HttpStatus.OK);
+    @DeleteMapping("/{workoutId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteWorkout(
+            @PathVariable Long userId,
+            @PathVariable Long workoutId
+    ) {
+        workoutService.deleteWorkout(workoutId);
     }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteWorkoutById(@PathVariable Long id) {
-        workoutService.deleteWorkoutById(id);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
 }

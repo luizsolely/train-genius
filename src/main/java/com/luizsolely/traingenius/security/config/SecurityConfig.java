@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/admins").permitAll() // Libera endpoints de autenticação
+                        .requestMatchers("/auth/**", "/admins", "/api", "/api/test-gemini/", "/api/test-gemini/generate").permitAll() // Libera endpoints de autenticação
                         .anyRequest().authenticated() // Todo o restante requer autenticação
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

@@ -23,6 +23,12 @@
 
 	<dependencies>
 
+		<dependency>
+			<groupId>com.google.genai</groupId>
+			<artifactId>google-genai</artifactId>
+			<version>0.1.0</version>
+		</dependency>
+
 		<!-- Spring Security -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

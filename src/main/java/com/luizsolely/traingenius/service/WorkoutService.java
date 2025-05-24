@@ -1,115 +1,117 @@
 package com.luizsolely.traingenius.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.luizsolely.traingenius.dto.WorkoutGeneratedResponse;
 import com.luizsolely.traingenius.dto.WorkoutRequest;
 import com.luizsolely.traingenius.dto.WorkoutResponse;
-import com.luizsolely.traingenius.exception.ResourceNotFoundException;
+import com.luizsolely.traingenius.exception.AiGenerationException;
+import com.luizsolely.traingenius.exception.UserNotFoundException;
+import com.luizsolely.traingenius.exception.WorkoutNotFoundException;
 import com.luizsolely.traingenius.mapper.WorkoutMapper;
 import com.luizsolely.traingenius.model.User;
 import com.luizsolely.traingenius.model.Workout;
+import com.luizsolely.traingenius.repository.UserRepository;
 import com.luizsolely.traingenius.repository.WorkoutRepository;
-import com.luizsolely.traingenius.security.jwt.JwtService;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.security.access.AccessDeniedException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class WorkoutService {
 
     private final WorkoutRepository workoutRepository;
-    private final UserService userService;
+    private final UserRepository userRepository;
+    private final GeminiService geminiService;
+    private final PromptBuilderService promptBuilderService;
+    private final ObjectMapper objectMapper;
     private final WorkoutMapper workoutMapper;
-    private final JwtService jwtService;
-    private final HttpServletRequest request;
 
-    public WorkoutService(
-            WorkoutRepository workoutRepository,
-            UserService userService,
-            WorkoutMapper workoutMapper,
-            JwtService jwtService,
-            HttpServletRequest request) {
-        this.workoutRepository = workoutRepository;
-        this.userService = userService;
-        this.workoutMapper = workoutMapper;
-        this.jwtService = jwtService;
-        this.request = request;
-    }
+    public WorkoutResponse generateWorkout(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
-    public WorkoutResponse createWorkout(WorkoutRequest workoutRequest) {
-        User user = userService.getUserEntityById(workoutRequest.userId());
-
-        if (!user.getAdmin().getId().equals(getAuthenticatedAdminId())) {
-            throw new AccessDeniedException("You are not allowed to create workouts for this user.");
+        String prompt = promptBuilderService.buildWorkoutPrompt(user);
+        String rawResponse;
+        try {
+            rawResponse = geminiService.generateText(prompt);
+        } catch (Exception e) {
+            log.error("❌ Error during AI generation for user {}", userId, e);
+            throw new AiGenerationException("Failed to generate workout from AI");
         }
 
-        Workout workout = workoutMapper.toEntity(workoutRequest);
+        // Clean AI response: strip markdown fences and extract JSON object
+        String jsonResponse = rawResponse;
+        int start = jsonResponse.indexOf('{');
+        int end = jsonResponse.lastIndexOf('}');
+        if (start != -1 && end != -1 && end > start) {
+            jsonResponse = jsonResponse.substring(start, end + 1);
+        } else {
+            log.error("❌ Unable to locate JSON object in AI response for user {}: {}", userId, rawResponse);
+            throw new AiGenerationException("AI response did not contain a valid JSON object");
+        }
+
+        WorkoutGeneratedResponse generated;
+        try {
+            generated = objectMapper.readValue(jsonResponse, WorkoutGeneratedResponse.class);
+        } catch (JsonProcessingException e) {
+            log.error("❌ Error parsing AI response JSON for user {}: {}", userId, e.getMessage(), e);
+            throw new AiGenerationException("Invalid AI response format");
+        }
+
+        // Use MapStruct to map AI response to entity
+        Workout workout = workoutMapper.toEntity(generated);
         workout.setUser(user);
 
-        return workoutMapper.toResponse(workoutRepository.save(workout));
+        Workout savedWorkout = workoutRepository.save(workout);
+        log.info("✅ Workout generated and saved for user {}", userId);
+
+        return toResponse(savedWorkout);
     }
 
-    public List<WorkoutResponse> getWorkoutsByUserId(Long userId) {
-        User user = userService.getUserEntityById(userId);
+    public WorkoutResponse createWorkout(Long userId, WorkoutRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
-        if (!user.getAdmin().getId().equals(getAuthenticatedAdminId())) {
-            throw new AccessDeniedException("You are not allowed to access workouts of this user.");
-        }
+        Workout workout = workoutMapper.toEntity(request);
+        workout.setUser(user);
 
-        return workoutMapper.toResponseList(workoutRepository.findByUserId(userId));
+        Workout savedWorkout = workoutRepository.save(workout);
+        log.info("✅ Workout manually created for user {}", userId);
+
+        return toResponse(savedWorkout);
+    }
+
+    public List<WorkoutResponse> getAllWorkoutsByUserId(Long userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        return workoutRepository.findByUserId(userId).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     public WorkoutResponse getWorkoutById(Long id) {
-        Workout workout = getWorkoutEntityById(id);
+        Workout workout = workoutRepository.findById(id)
+                .orElseThrow(() -> new WorkoutNotFoundException(id));
 
-        if (!workout.getUser().getAdmin().getId().equals(getAuthenticatedAdminId())) {
-            throw new AccessDeniedException("You are not allowed to access this workout.");
+        return toResponse(workout);
+    }
+
+    public void deleteWorkout(Long id) {
+        if (!workoutRepository.existsById(id)) {
+            throw new WorkoutNotFoundException(id);
         }
 
+        workoutRepository.deleteById(id);
+        log.info("🗑️ Workout with id {} deleted.", id);
+    }
+
+    private WorkoutResponse toResponse(Workout workout) {
         return workoutMapper.toResponse(workout);
-    }
-
-    public WorkoutResponse updateWorkoutById(WorkoutRequest workoutRequest, Long id) {
-        Workout workout = getWorkoutEntityById(id);
-
-        if (!workout.getUser().getAdmin().getId().equals(getAuthenticatedAdminId())) {
-            throw new AccessDeniedException("You are not allowed to update this workout.");
-        }
-
-        User user = userService.getUserEntityById(workoutRequest.userId());
-
-        if (!user.getAdmin().getId().equals(getAuthenticatedAdminId())) {
-            throw new AccessDeniedException("You are not allowed to assign this workout to this user.");
-        }
-
-        workout.setTitle(workoutRequest.title());
-        workout.setDescription(workoutRequest.description());
-        workout.setTrainingDate(workoutRequest.trainingDate());
-        workout.setExercises(workoutRequest.exercises());
-        workout.setUser(user);
-
-        return workoutMapper.toResponse(workoutRepository.save(workout));
-    }
-
-    public void deleteWorkoutById(Long id) {
-        Workout workout = getWorkoutEntityById(id);
-
-        if (!workout.getUser().getAdmin().getId().equals(getAuthenticatedAdminId())) {
-            throw new AccessDeniedException("You are not allowed to delete this workout.");
-        }
-
-        workoutRepository.delete(workout);
-    }
-
-    private Workout getWorkoutEntityById(Long id) {
-        return workoutRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Workout not found with ID: " + id));
-    }
-
-    private Long getAuthenticatedAdminId() {
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        String token = authHeader.substring(7);
-        return jwtService.extractAdminId(token);
     }
 }
