@@ -1,5 +1,5 @@
 gemini:
-  api.key: AIzaSyCRlE0AXgWSy541Ek4e9iDdN-PB50002uU
+  api.key:
   model.name: gemini-1.5-flash-latest
 
 spring:
